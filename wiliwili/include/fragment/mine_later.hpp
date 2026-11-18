@@ -23,5 +23,10 @@ public:
     void onError(const std::string &error) override;
 
 private:
+    void removeItemAt(size_t index);
+
+    void clearViewedVideos();
+
     BRLS_BIND(RecyclingGrid, recyclingGrid, "mine/later/recyclingGrid");
+    BRLS_BIND(brls::Button, btnClearViewed, "mine/later/clear_viewed");
 };

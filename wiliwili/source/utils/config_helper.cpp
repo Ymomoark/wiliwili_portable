@@ -1167,10 +1167,21 @@ std::string ProgramConfig::getConfigDir() {
 #endif
 #ifdef _WIN32
     WCHAR wpath[MAX_PATH];
-    std::vector<char> lpath(MAX_PATH);
-    SHGetSpecialFolderPathW(0, wpath, CSIDL_LOCAL_APPDATA, false);
-    WideCharToMultiByte(CP_UTF8, 0, wpath, std::wcslen(wpath), lpath.data(), lpath.size(), nullptr, nullptr);
-    return std::string(lpath.data()) + "\\xfangfang\\wiliwili";
+    DWORD len = GetModuleFileNameW(nullptr, wpath, MAX_PATH);
+    if (len > 0 && len < MAX_PATH) {
+        std::wstring ws(wpath, len);
+        auto pos = ws.find_last_of(L"\\/");
+        if (pos != std::wstring::npos) {
+            ws = ws.substr(0, pos);
+        }
+        int utf8Len = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), nullptr, 0, nullptr, nullptr);
+        if (utf8Len > 0) {
+            std::string exeDir(utf8Len, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), &exeDir[0], utf8Len, nullptr, nullptr);
+            return exeDir + "\\data";
+        }
+    }
+    return "data";
 #endif
 #endif /* _DEBUG */
 #endif /* __SWITCH__ */

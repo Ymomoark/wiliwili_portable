@@ -4,13 +4,18 @@
 
 #include <utility>
 #include <borealis/core/thread.hpp>
+#include <borealis/views/button.hpp>
+#include <fmt/format.h>
 
+#include "bilibili.h"
 #include "fragment/mine_later.hpp"
 #include "view/video_card.hpp"
 #include "utils/number_helper.hpp"
 #include "utils/activity_helper.hpp"
 #include "utils/image_helper.hpp"
 #include "utils/shortcut_helper.hpp"
+#include "utils/config_helper.hpp"
+#include "utils/dialog_helper.hpp"
 
 using namespace brls::literals;
 
@@ -22,8 +27,9 @@ public:
     RecyclingGridItem* cellForRow(RecyclingGrid* recycler, size_t index) override {
         RecyclingGridItemVideoCard* item = (RecyclingGridItemVideoCard*)recycler->dequeueReusableCell("Cell");
         bilibili::WatchLaterItem& r      = this->list[index];
+        std::string extra                = r.isWatched() ? "已看完" : "";
         item->setCard(r.pic + ImageHelper::h_ext, r.title, r.owner.name, 0, r.stat.view, r.stat.danmaku,
-                      r.duration); //todo
+                      r.duration, extra);
         return item;
     }
 
@@ -37,6 +43,22 @@ public:
 
     void clearData() override { this->list.clear(); }
 
+    const bilibili::WatchLaterList& getList() const { return list; }
+
+    void removeAt(size_t index) {
+        if (index < list.size()) {
+            list.erase(list.begin() + static_cast<std::ptrdiff_t>(index));
+        }
+    }
+
+    size_t getWatchedCount() const {
+        size_t count = 0;
+        for (const auto& item : list) {
+            if (item.isWatched()) ++count;
+        }
+        return count;
+    }
+
 private:
     bilibili::WatchLaterList list;
 };
@@ -44,11 +66,28 @@ private:
 MineLater::MineLater() {
     this->inflateFromXMLRes("xml/fragment/mine_later.xml");
     brls::Logger::debug("frag mine later created");
-    recyclingGrid->registerCell("Cell", []() { return RecyclingGridItemVideoCard::create(); });
+    recyclingGrid->registerCell("Cell", [this]() {
+        auto* item = RecyclingGridItemVideoCard::create();
+        item->registerAction("移出稍后再看", brls::ControllerButton::BUTTON_Y,
+                             [this, item](brls::View* view) -> bool {
+                                 this->removeItemAt(item->getIndex());
+                                 return true;
+                             });
+        item->registerAction(brls::BRLS_KBD_KEY_DELETE,
+                             [this, item](brls::View* view) -> bool {
+                                 this->removeItemAt(item->getIndex());
+                                 return true;
+                             });
+        return item;
+    });
     recyclingGrid->setRefreshAction([this]() {
         AutoTabFrame::focus2Sidebar(this);
         this->recyclingGrid->showSkeleton();
         this->requestData(true);
+    });
+    btnClearViewed->registerClickAction([this](brls::View* view) -> bool {
+        this->clearViewedVideos();
+        return true;
     });
     this->requestData();
 }
@@ -64,6 +103,83 @@ void MineLater::onCreate() {
                                 this->recyclingGrid->refresh();
                                 return true;
                             });
+    this->registerTabAction("清除已看视频", brls::ControllerButton::BUTTON_BACK,
+                            [this](brls::View* view) -> bool {
+                                this->clearViewedVideos();
+                                return true;
+                            });
+}
+
+void MineLater::removeItemAt(size_t index) {
+    auto* ds = dynamic_cast<DataSourceMineWatchLaterList*>(recyclingGrid->getDataSource());
+    if (!ds || index >= ds->getItemCount()) return;
+
+    auto csrf = ProgramConfig::instance().getCSRF();
+    if (csrf.empty()) {
+        DialogHelper::showDialog("wiliwili/home/common/no_login"_i18n);
+        return;
+    }
+
+    const auto item = ds->getList()[index];
+    DialogHelper::showCancelableDialog(
+        fmt::format("确定从稍后再看中移出「{}」吗？", item.title),
+        [this, csrf, aid = item.aid, index]() {
+            ASYNC_RETAIN
+            BILI::delWatchLater(
+                csrf, aid,
+                [ASYNC_TOKEN, index]() {
+                    brls::sync([ASYNC_TOKEN, index]() {
+                        ASYNC_RELEASE
+                        auto* currentDs = dynamic_cast<DataSourceMineWatchLaterList*>(recyclingGrid->getDataSource());
+                        if (currentDs && index < currentDs->getItemCount()) {
+                            currentDs->removeAt(index);
+                            recyclingGrid->reloadData();
+                        }
+                        brls::Application::notify("已移出稍后再看");
+                    });
+                },
+                [ASYNC_TOKEN](BILI_ERR) {
+                    brls::sync([ASYNC_TOKEN, error]() {
+                        ASYNC_RELEASE
+                        DialogHelper::showDialog(error);
+                    });
+                });
+        });
+}
+
+void MineLater::clearViewedVideos() {
+    auto* ds = dynamic_cast<DataSourceMineWatchLaterList*>(recyclingGrid->getDataSource());
+    if (!ds) return;
+
+    auto csrf = ProgramConfig::instance().getCSRF();
+    if (csrf.empty()) {
+        DialogHelper::showDialog("wiliwili/home/common/no_login"_i18n);
+        return;
+    }
+
+    size_t watchedCount = ds->getWatchedCount();
+    std::string msg     = watchedCount > 0
+                              ? fmt::format("检测到 {} 个已看完的视频，确定从稍后再看中一键清除吗？", watchedCount)
+                              : "当前列表中未检测到已看完的视频，是否仍尝试清除所有已看记录？";
+
+    DialogHelper::showCancelableDialog(msg, [this, csrf]() {
+        ASYNC_RETAIN
+        BILI::clearViewedWatchLater(
+            csrf,
+            [ASYNC_TOKEN]() {
+                brls::sync([ASYNC_TOKEN]() {
+                    ASYNC_RELEASE
+                    brls::Application::notify("已清除稍后再看中的已看视频");
+                    this->recyclingGrid->refresh();
+                });
+            },
+            [ASYNC_TOKEN](BILI_ERR) {
+                brls::sync([ASYNC_TOKEN, error]() {
+                    ASYNC_RELEASE
+                    DialogHelper::showDialog(error);
+                });
+            });
+    });
 }
 
 void MineLater::onWatchLaterList(const bilibili::WatchLaterListWrapper& result) {

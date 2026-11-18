@@ -17,7 +17,9 @@
             <brls:Box
                     marginTop="8"
                     marginLeft="20"
+                    marginRight="60"
                     marginBottom="16"
+                    alignItems="center"
                     height="100">
                 <brls:Image
                         scalingType="fill"
@@ -30,7 +32,7 @@
                         focusable="true"/>
                 <brls:Box
                         marginLeft="20"
-                        marginTop="20"
+                        marginTop="10"
                         height="100"
                         grow="1"
                         axis="column">
@@ -48,6 +50,14 @@
                             textColor="@theme/font/grey"
                             width="100%"/>
                 </brls:Box>
+                <brls:Button
+                        id="collection/btn/clear_viewed"
+                        marginLeft="16"
+                        width="auto"
+                        height="36"
+                        fontSize="14"
+                        visibility="gone"
+                        text="清除已看视频"/>
             </brls:Box>
 
             <RecyclingGrid

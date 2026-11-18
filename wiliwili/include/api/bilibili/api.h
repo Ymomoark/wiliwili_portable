@@ -198,6 +198,7 @@ const std::string UserUGCSeason = _apiBase + "/x/v3/fav/folder/collected/list";
 const std::string UserUGCSeasonVideoList = _apiBase + "/x/space/fav/season/list";
 // watch later
 const std::string WatchLater = _apiBase + "/x/v2/history/toview/web";
+const std::string WatchLaterDel = _apiBase + "/x/v2/history/toview/del";
 
 /// ===
 /// 搜索页API

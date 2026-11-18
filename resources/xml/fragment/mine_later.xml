@@ -3,6 +3,27 @@
         axis="column"
         width="auto"
         height="auto">
+    <brls:Box
+            axis="row"
+            alignItems="center"
+            justifyContent="spaceBetween"
+            paddingLeft="20"
+            paddingRight="20"
+            paddingTop="8"
+            paddingBottom="4"
+            height="auto">
+        <brls:Label
+                id="mine/later/hint"
+                text="提示：选中视频按 Delete / Y 键可快速移出稍后再看"
+                fontSize="14"
+                textColor="@theme/font/grey"/>
+        <brls:Button
+                id="mine/later/clear_viewed"
+                width="auto"
+                height="34"
+                fontSize="14"
+                text="清除已看视频"/>
+    </brls:Box>
     <RecyclingGrid
             paddingLeft="20"
             paddingRight="20"

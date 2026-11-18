@@ -190,6 +190,14 @@ public:
     static void getWatchLater(const std::function<void(WatchLaterListWrapper)>& callback = nullptr,
                               const ErrorCallback& error                                 = nullptr);
 
+    static void delWatchLater(const std::string& access_key, uint64_t aid,
+                              const std::function<void()>& callback = nullptr,
+                              const ErrorCallback& error            = nullptr);
+
+    static void clearViewedWatchLater(const std::string& access_key,
+                                      const std::function<void()>& callback = nullptr,
+                                      const ErrorCallback& error            = nullptr);
+
     /**
      * 获取用户创建的收藏列表或用户订阅的合集
      * @param mid
