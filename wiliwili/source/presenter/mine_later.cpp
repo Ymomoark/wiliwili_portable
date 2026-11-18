@@ -2,6 +2,7 @@
 // Created by 贾海峰 on 2023/7/7.
 //
 
+#include <borealis/core/thread.hpp>
 #include "bilibili.h"
 #include "presenter/mine_later.hpp"
 #include "borealis/core/i18n.hpp"
@@ -10,6 +11,12 @@
 using namespace brls::literals;
 
 void MineLaterRequest::onWatchLaterList(const bilibili::WatchLaterListWrapper& result) {}
+
+void MineLaterRequest::onDelWatchLaterSuccess(size_t index) {}
+
+void MineLaterRequest::onClearViewedSuccess() {}
+
+void MineLaterRequest::onActionError(const std::string& error) {}
 
 void MineLaterRequest::onError(const std::string& error) {}
 
@@ -23,4 +30,50 @@ void MineLaterRequest::requestWatchLaterList() {
     }
     BILI::getWatchLater([this](const auto& result) { this->onWatchLaterList(result); },
                         [this](BILI_ERR) { this->onError(error); });
+}
+
+void MineLaterRequest::requestDelWatchLater(uint64_t aid, size_t index) {
+    auto csrf = ProgramConfig::instance().getCSRF();
+    if (csrf.empty()) {
+        this->onActionError("wiliwili/home/common/no_login"_i18n);
+        return;
+    }
+    ASYNC_RETAIN
+    BILI::delWatchLater(
+        csrf, aid,
+        [ASYNC_TOKEN, index]() {
+            brls::sync([ASYNC_TOKEN, index]() {
+                ASYNC_RELEASE
+                this->onDelWatchLaterSuccess(index);
+            });
+        },
+        [ASYNC_TOKEN](BILI_ERR) {
+            brls::sync([ASYNC_TOKEN, error]() {
+                ASYNC_RELEASE
+                this->onActionError(error);
+            });
+        });
+}
+
+void MineLaterRequest::requestClearViewedWatchLater() {
+    auto csrf = ProgramConfig::instance().getCSRF();
+    if (csrf.empty()) {
+        this->onActionError("wiliwili/home/common/no_login"_i18n);
+        return;
+    }
+    ASYNC_RETAIN
+    BILI::clearViewedWatchLater(
+        csrf,
+        [ASYNC_TOKEN]() {
+            brls::sync([ASYNC_TOKEN]() {
+                ASYNC_RELEASE
+                this->onClearViewedSuccess();
+            });
+        },
+        [ASYNC_TOKEN](BILI_ERR) {
+            brls::sync([ASYNC_TOKEN, error]() {
+                ASYNC_RELEASE
+                this->onActionError(error);
+            });
+        });
 }

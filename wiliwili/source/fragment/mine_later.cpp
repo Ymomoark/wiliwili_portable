@@ -123,27 +123,8 @@ void MineLater::removeItemAt(size_t index) {
     const auto item = ds->getList()[index];
     DialogHelper::showCancelableDialog(
         fmt::format("确定从稍后再看中移出「{}」吗？", item.title),
-        [this, csrf, aid = item.aid, index]() {
-            ASYNC_RETAIN
-            BILI::delWatchLater(
-                csrf, aid,
-                [ASYNC_TOKEN, index]() {
-                    brls::sync([ASYNC_TOKEN, index]() {
-                        ASYNC_RELEASE
-                        auto* currentDs = dynamic_cast<DataSourceMineWatchLaterList*>(recyclingGrid->getDataSource());
-                        if (currentDs && index < currentDs->getItemCount()) {
-                            currentDs->removeAt(index);
-                            recyclingGrid->reloadData();
-                        }
-                        brls::Application::notify("已移出稍后再看");
-                    });
-                },
-                [ASYNC_TOKEN](BILI_ERR) {
-                    brls::sync([ASYNC_TOKEN, error]() {
-                        ASYNC_RELEASE
-                        DialogHelper::showDialog(error);
-                    });
-                });
+        [this, aid = item.aid, index]() {
+            this->requestDelWatchLater(aid, index);
         });
 }
 
@@ -162,24 +143,27 @@ void MineLater::clearViewedVideos() {
                               ? fmt::format("检测到 {} 个已看完的视频，确定从稍后再看中一键清除吗？", watchedCount)
                               : "当前列表中未检测到已看完的视频，是否仍尝试清除所有已看记录？";
 
-    DialogHelper::showCancelableDialog(msg, [this, csrf]() {
-        ASYNC_RETAIN
-        BILI::clearViewedWatchLater(
-            csrf,
-            [ASYNC_TOKEN]() {
-                brls::sync([ASYNC_TOKEN]() {
-                    ASYNC_RELEASE
-                    brls::Application::notify("已清除稍后再看中的已看视频");
-                    this->recyclingGrid->refresh();
-                });
-            },
-            [ASYNC_TOKEN](BILI_ERR) {
-                brls::sync([ASYNC_TOKEN, error]() {
-                    ASYNC_RELEASE
-                    DialogHelper::showDialog(error);
-                });
-            });
+    DialogHelper::showCancelableDialog(msg, [this]() {
+        this->requestClearViewedWatchLater();
     });
+}
+
+void MineLater::onDelWatchLaterSuccess(size_t index) {
+    auto* currentDs = dynamic_cast<DataSourceMineWatchLaterList*>(recyclingGrid->getDataSource());
+    if (currentDs && index < currentDs->getItemCount()) {
+        currentDs->removeAt(index);
+        recyclingGrid->reloadData();
+    }
+    brls::Application::notify("已移出稍后再看");
+}
+
+void MineLater::onClearViewedSuccess() {
+    brls::Application::notify("已清除稍后再看中的已看视频");
+    this->recyclingGrid->refresh();
+}
+
+void MineLater::onActionError(const std::string& error) {
+    DialogHelper::showDialog(error);
 }
 
 void MineLater::onWatchLaterList(const bilibili::WatchLaterListWrapper& result) {

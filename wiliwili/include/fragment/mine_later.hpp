@@ -20,6 +20,12 @@ public:
 
     void onWatchLaterList(const bilibili::WatchLaterListWrapper &result) override;
 
+    void onDelWatchLaterSuccess(size_t index) override;
+
+    void onClearViewedSuccess() override;
+
+    void onActionError(const std::string &error) override;
+
     void onError(const std::string &error) override;
 
 private:
