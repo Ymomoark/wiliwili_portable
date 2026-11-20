@@ -839,7 +839,13 @@ void MPVCore::draw(brls::Rect area, float alpha) {
 #ifdef BOREALIS_USE_D3D11
         ID3D11Texture2D *tex = nullptr;
         auto swapChain = D3D11_CONTEXT->getSwapChain();
-        swapChain->GetBuffer(0, IID_PPV_ARGS(&tex));
+        // seek/窗口尺寸变化期间 GetBuffer 可能失败，tex 会是 nullptr；
+        // 传给 mpv 会导致内部解引用空指针崩溃，失败时跳过本帧渲染。
+        HRESULT hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&tex));
+        if (hr < 0 || !tex) {
+            if (tex) tex->Release();
+            return;
+        }
         mpv_fbo.tex = tex;
 #elif defined(BOREALIS_USE_DEKO3D)
         static auto videoContext = (brls::SwitchVideoContext *)brls::Application::getPlatform()->getVideoContext();
