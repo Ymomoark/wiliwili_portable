@@ -190,6 +190,11 @@ public:
     static void getWatchLater(const std::function<void(WatchLaterListWrapper)>& callback = nullptr,
                               const ErrorCallback& error                                 = nullptr);
 
+    /** 从稍后再看移出单个视频 */
+    static void delWatchLater(const std::string& csrf, uint64_t aid,
+                              const std::function<void()>& callback = nullptr,
+                              const ErrorCallback& error            = nullptr);
+
     /**
      * 获取用户创建的收藏列表或用户订阅的合集
      * @param mid
@@ -541,6 +546,16 @@ public:
     static void add_resource(const std::string& access_key, uint64_t rid, int type, const std::string& add_ids,
                              const std::string& del_ids, const std::function<void()>& callback = nullptr,
                              const ErrorCallback& error = nullptr);
+
+    /**
+     * 删除失效视频（稿件已下架/删除）。失效稿件用 deal 接口会失败，需用 batch-del。
+     * @param csrf CSRF Token
+     * @param rid 视频 avid
+     * @param media_id 收藏夹 id
+     */
+    static void delInvalidResource(const std::string& csrf, uint64_t rid, uint64_t media_id,
+                                   const std::function<void()>& callback = nullptr,
+                                   const ErrorCallback& error        = nullptr);
 
     /**
      * 订阅合集

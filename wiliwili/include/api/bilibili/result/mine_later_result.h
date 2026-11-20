@@ -25,14 +25,24 @@ class WatchLaterItem {
 public:
     std::string pic;
     Up owner;
-    int duration;  // video length in seconds
+    int duration = 0;  // video length in seconds
     std::string title;
-    uint64_t aid;
+    uint64_t aid = 0;
     Stat stat;
     std::string bvid;
-    uint64_t cid;
+    uint64_t cid = 0;
+    // 观看进度秒数：-1 表示看完。稍后再看接口不返回该字段，由页面用观看历史补充标记。
+    int progress = 0;
+
+    bool isWatched() const { return progress == -1 || (duration > 0 && progress >= duration - 5); }
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WatchLaterItem, aid, pic, title, duration, owner, stat, bvid, cid);
+// 只定义 from_json：本结构仅用于解析，避免 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE 生成 to_json
+inline void from_json(const nlohmann::json& nlohmann_json_j, WatchLaterItem& nlohmann_json_t) {
+    if (nlohmann_json_j.contains("progress") && nlohmann_json_j.at("progress").is_number_integer()) {
+        nlohmann_json_j.at("progress").get_to(nlohmann_json_t.progress);
+    }
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, aid, pic, title, duration, owner, stat, bvid, cid));
+}
 
 typedef std::vector<WatchLaterItem> WatchLaterList;
 
@@ -41,5 +51,7 @@ public:
     int count;
     WatchLaterList list;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WatchLaterListWrapper, count, list);
+inline void from_json(const nlohmann::json& nlohmann_json_j, WatchLaterListWrapper& nlohmann_json_t) {
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, count, list));
+}
 }  // namespace bilibili

@@ -179,6 +179,8 @@ const std::string CollectionList          = _apiBase + "/x/v3/fav/folder/created
 const std::string CollectionListAll       = _apiBase + "/x/v3/fav/folder/created/list-all";
 const std::string CollectionVideoList     = _apiBase + "/x/v3/fav/resource/list";
 const std::string CollectionVideoListSave = _apiBase + "/x/v3/fav/resource/deal";
+// 删除失效视频（稿件已下架/删除）需用 batch-del，deal 接口对失效稿件会返回错误
+const std::string CollectionVideoBatchDel = _apiBase + "/x/v3/fav/resource/batch-del";
 const std::string UserUploadedVideo       = _apiBase + "/x/space/arc/search";
 const std::string UserRelationStat        = _apiBase + "/x/relation/stat";
 const std::string MsgFeedLike             = _apiBase + "/x/msgfeed/like";
@@ -197,7 +199,8 @@ const std::string UserUGCSeason = _apiBase + "/x/v3/fav/folder/collected/list";
 /// 用户订阅合集的视频列表
 const std::string UserUGCSeasonVideoList = _apiBase + "/x/space/fav/season/list";
 // watch later
-const std::string WatchLater = _apiBase + "/x/v2/history/toview/web";
+const std::string WatchLater    = _apiBase + "/x/v2/history/toview/web";
+const std::string WatchLaterDel = _apiBase + "/x/v2/history/toview/del";
 
 /// ===
 /// 搜索页API

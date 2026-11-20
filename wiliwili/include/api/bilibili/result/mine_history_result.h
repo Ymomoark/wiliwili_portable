@@ -40,6 +40,9 @@ public:
     int duration;
     int progress;         // -1：表示看完了
     int live_status = 0;  // 是否在直播
+
+    // 是否已看完：进度 -1 或 距离结尾不足 5 秒
+    bool isFinished() const { return progress == -1 || (duration > 0 && progress >= duration - 5); }
 };
 inline void from_json(const nlohmann::json& nlohmann_json_j, HistoryVideoResult& nlohmann_json_t) {
     if (nlohmann_json_j.at("covers").is_array() && nlohmann_json_j.at("covers").size() != 0) {

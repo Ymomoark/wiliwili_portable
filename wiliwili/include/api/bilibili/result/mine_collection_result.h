@@ -111,6 +111,9 @@ public:
     int duration         = 0;
     unsigned int pubtime = 0;
     std::string bvid;
+    // 稿件失效状态：0 正常；9 UP 自己删除；1 其他原因删除
+    int attr = 0;
+    bool isInvalid() const { return attr != 0; }
 };
 inline void from_json(const nlohmann::json& nlohmann_json_j, CollectionVideoResult& nlohmann_json_t) {
     if (nlohmann_json_j.contains("type")) {
@@ -120,7 +123,7 @@ inline void from_json(const nlohmann::json& nlohmann_json_j, CollectionVideoResu
         nlohmann_json_j.at("intro").get_to(nlohmann_json_t.intro);
     }
     NLOHMANN_JSON_EXPAND(
-        NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, id, title, cover, upper, cnt_info, duration, pubtime, bvid));
+        NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, id, title, cover, upper, cnt_info, duration, pubtime, bvid, attr));
 }
 
 typedef std::vector<CollectionVideoResult> CollectionVideoListResult;

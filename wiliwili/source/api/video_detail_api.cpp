@@ -521,6 +521,19 @@ void BilibiliClient::add_resource(const std::string& access_key, uint64_t rid, i
     HTTP::postResultAsync(Api::CollectionVideoListSave, {}, payload, callback, error);
 }
 
+void BilibiliClient::delInvalidResource(const std::string& csrf, uint64_t rid, uint64_t media_id,
+                                        const std::function<void()>& callback,
+                                        const bilibili::ErrorCallback& error) {
+    // 失效稿件用 deal 接口会失败，改用 batch-del；resources 格式 {avid}:{type}，type=2 为视频稿件
+    cpr::Payload payload = {
+        {"resources", std::to_string(rid) + ":2"},
+        {"media_id", std::to_string(media_id)},
+        {"platform", "web"},
+        {"csrf", csrf},
+    };
+    HTTP::postResultAsync(Api::CollectionVideoBatchDel, {}, payload, callback, error);
+}
+
 void BilibiliClient::triple_like(const std::string& access_key, uint64_t aid, const std::function<void()>& callback,
                                  const ErrorCallback& error) {
     cpr::Payload payload = {

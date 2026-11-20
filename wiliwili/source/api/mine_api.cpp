@@ -257,6 +257,16 @@ void BilibiliClient::getWatchLater(const std::function<void(WatchLaterListWrappe
     HTTP::getResultAsync<WatchLaterListWrapper>(Api::WatchLater, {}, callback, error);
 }
 
+void BilibiliClient::delWatchLater(const std::string& csrf, uint64_t aid,
+                                   const std::function<void()>& callback,
+                                   const bilibili::ErrorCallback& error) {
+    cpr::Payload payload = {
+        {"aid", std::to_string(aid)},
+        {"csrf", csrf},
+    };
+    HTTP::postResultAsync(Api::WatchLaterDel, {}, payload, callback, error);
+}
+
 //
 //static void getWatchLater(
 //    const std::function<void(WatchLaterList)>& callback = nullptr,
